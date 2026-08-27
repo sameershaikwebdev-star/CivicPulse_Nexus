@@ -1,0 +1,48 @@
+@media(max-width:900px){
+
+.desktop-menu{
+
+display:none !important;
+
+}
+
+.mobile-menu{
+
+display:block !important;
+
+}
+
+.title{
+
+font-size:46px;
+
+}
+
+}
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+select option {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  overflow-x: hidden;
+}
+
+.glare-wrapper {
+  overflow: hidden !important;
+  max-width: 100%;
+}
