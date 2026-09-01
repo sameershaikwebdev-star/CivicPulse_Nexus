@@ -3,15 +3,25 @@ const Complaint = require("../models/Complaint");
 // POST /api/complaints
 async function createComplaint(req, res) {
   try {
-    const { title, category, priority, location, latitude, longitude, description } = req.body;
+    const {
+      title,
+      category,
+      priority,
+      location,
+      latitude,
+      longitude,
+      description,
+    } = req.body;
 
     if (!title || !category || !priority || !location || !description) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
     }
 
-    const photos = (req.files || []).map(
-      (f) => `/uploads/${f.filename}`
-    );
+    const photos = Array.isArray(req.files)
+      ? req.files.map((file) => `/uploads/${file.filename}`)
+      : [];
 
     const complaint = await Complaint.create({
       title,
@@ -26,8 +36,14 @@ async function createComplaint(req, res) {
     });
 
     res.status(201).json({ complaint });
+
   } catch (err) {
-    res.status(500).json({ message: "Failed to create complaint", error: err.message });
+    console.error("Create complaint error:", err);
+
+    res.status(500).json({
+      message: "Failed to create complaint",
+      error: err.message,
+    });
   }
 }
 
