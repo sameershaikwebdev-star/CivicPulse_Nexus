@@ -373,8 +373,19 @@ function ComplaintForm({ token, user }) {
           placeholder="Describe your complaint..."
           style={textarea}
           value={form.description}
+          MaxLength={365}
           onChange={(e) => update("description", e.target.value)}
-        />
+        /><div
+  style={{
+    textAlign: "right",
+    color: form.description.length >= 356 ? "#f87171" : "#94a3b8",
+    fontSize: "12px",
+    marginTop: "-12px",
+    marginBottom: "12px",
+  }}
+>
+  {form.description.length}/356 characters
+</div>
 
         <label style={upload}>
           <ImagePlus />
