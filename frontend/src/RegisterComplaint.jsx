@@ -19,7 +19,58 @@ import {
 import { authApi, complaintApi } from "./api";
 import { useAuth } from "./AuthContext";
 import GisMapModal from "./components/GisMapModal";
+async function handleSubmit(e) {
+  e.preventDefault();
 
+  if (!form.fullName || !form.email || !form.phone || !form.password) {
+    setStatus({
+      state: "error",
+      message: "Please fill in all required fields.",
+    });
+    return;
+  }
+
+  if (!EMAIL_REGEX.test(form.email.trim())) {
+    setStatus({
+      state: "error",
+      message: "Please enter a valid email address, for example user@gmail.com.",
+    });
+    return;
+  }
+
+  if (!PASSWORD_REGEX.test(form.password)) {
+    setStatus({
+      state: "error",
+      message:
+        "Password must be at least 8 characters and contain 1 uppercase letter, 1 number, and 1 special character such as @.",
+    });
+    return;
+  }
+
+  if (form.password !== form.confirmPassword) {
+    setStatus({
+      state: "error",
+      message: "Passwords do not match.",
+    });
+    return;
+  }
+
+  setStatus({ state: "loading", message: "" });
+
+  try {
+    const data = await authApi.register(form);
+    onAuthed(data.user, data.token);
+    setStatus({
+      state: "success",
+      message: "Account created!",
+    });
+  } catch (err) {
+    setStatus({
+      state: "error",
+      message: err.message || "Registration failed.",
+    });
+  }
+}
 const CATEGORIES = [
   "Roads",
   "Water Supply",
@@ -166,43 +217,58 @@ function ComplaintForm({ token, user }) {
     );
   };
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+ async function handleSubmit(e) {
+  e.preventDefault();
 
-    if (!user || !token) {
-      setStatus({
-        state: "error",
-        message: "Please create an account or log in before submitting a complaint.",
-      });
-      return;
-    }
-
-    if (!form.title || !form.category || !form.priority || !form.location || !form.description) {
-      setStatus({ state: "error", message: "Please fill in all required fields." });
-      return;
-    }
-
-    setStatus({ state: "loading", message: "" });
-
-    try {
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      if (coords) {
-        fd.append("latitude", coords.lat);
-        fd.append("longitude", coords.lng);
-      }
-      photos.forEach((file) => fd.append("photos", file));
-
-      await complaintApi.create(fd, token);
-
-      setStatus({ state: "success", message: "Complaint submitted successfully!" });
-      setForm({ title: "", category: "", priority: "", location: "", description: "" });
-      setCoords(null);
-      setPhotos([]);
-    } catch (err) {
-      setStatus({ state: "error", message: err.message || "Failed to submit complaint." });
-    }
+  if (!form.fullName || !form.email || !form.phone || !form.password) {
+    setStatus({
+      state: "error",
+      message: "Please fill in all required fields.",
+    });
+    return;
   }
+
+  if (!EMAIL_REGEX.test(form.email.trim())) {
+    setStatus({
+      state: "error",
+      message: "Please enter a valid email address, for example user@gmail.com.",
+    });
+    return;
+  }
+
+  if (!PASSWORD_REGEX.test(form.password)) {
+    setStatus({
+      state: "error",
+      message:
+        "Password must be at least 8 characters and contain 1 uppercase letter, 1 number, and 1 special character such as @.",
+    });
+    return;
+  }
+
+  if (form.password !== form.confirmPassword) {
+    setStatus({
+      state: "error",
+      message: "Passwords do not match.",
+    });
+    return;
+  }
+
+  setStatus({ state: "loading", message: "" });
+
+  try {
+    const data = await authApi.register(form);
+    onAuthed(data.user, data.token);
+    setStatus({
+      state: "success",
+      message: "Account created!",
+    });
+  } catch (err) {
+    setStatus({
+      state: "error",
+      message: err.message || "Registration failed.",
+    });
+  }
+}
 
   return (
     <>
@@ -429,6 +495,7 @@ function RegisterForm({ onAuthed }) {
         icon={<Mail />}
         type="email"
         placeholder="Email Address"
+        title="Enter a valid email address such as user@gmail.com"
         value={form.email}
         onChange={(e) => update("email", e.target.value)}
       />
@@ -455,12 +522,13 @@ function RegisterForm({ onAuthed }) {
       </select>
 
       <Input
-        icon={<Lock />}
-        type="password"
-        placeholder="Password"
-        value={form.password}
-        onChange={(e) => update("password", e.target.value)}
-      />
+  icon={<Lock />}
+  type="password"
+  placeholder="Password"
+  title="Password must be at least 8 characters and contain 1 uppercase letter, 1 number, and 1 special character such as @."
+  value={form.password}
+  onChange={(e) => update("password", e.target.value)}
+/>
       <Input
         icon={<Lock />}
         type="password"
