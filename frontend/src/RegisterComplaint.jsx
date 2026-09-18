@@ -43,12 +43,6 @@ const PRIORITIES = [
   "Emergency",
 ];
 
-const ROLES = [
-  "Citizen",
-  "Government Officer",
-  "Department Staff",
-  "Admin",
-];
 
 /* =========================================================
    VALIDATION REGEX
@@ -58,7 +52,9 @@ const ROLES = [
 // user@gmail.com
 // sameer@yahoo.com
 // person@outlook.com
+const NAME_REGEX = /^[A-Za-z]+(?:[A-Za-z ]*[A-Za-z]+)?$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_REGEX = /^[0-9]{10}$/;
 
 // Password requirements:
 // Minimum 8 characters
@@ -1000,7 +996,6 @@ function RegisterForm({
       email: "",
       phone: "",
       address: "",
-      role: "",
       password: "",
       confirmPassword: "",
     });
@@ -1043,17 +1038,46 @@ function RegisterForm({
       return;
     }
 
+    /* Full name: letters and spaces only */
+
+    if (!NAME_REGEX.test(form.fullName.trim())) {
+      setStatus({
+        state: "error",
+        message: "Name must contain letters and spaces only.",
+      });
+
+      return;
+    }
+
     /* Email */
 
-    if (
-      !EMAIL_REGEX.test(
-        form.email.trim()
-      )
-    ) {
+    if (!EMAIL_REGEX.test(form.email.trim())) {
       setStatus({
         state: "error",
         message:
           "Please enter a valid email address, for example user@gmail.com.",
+      });
+
+      return;
+    }
+
+    /* Phone: exactly 10 digits */
+
+    if (!PHONE_REGEX.test(form.phone.trim())) {
+      setStatus({
+        state: "error",
+        message: "Phone number must contain exactly 10 digits.",
+      });
+
+      return;
+    }
+
+    /* Address */
+
+    if (form.address.trim().length < 5) {
+      setStatus({
+        state: "error",
+        message: "Please enter a valid address.",
       });
 
       return;
@@ -1133,10 +1157,11 @@ function RegisterForm({
         icon={<User />}
         placeholder="Full Name"
         value={form.fullName}
+        maxLength={60}
         onChange={(e) =>
           update(
             "fullName",
-            e.target.value
+            e.target.value.replace(/[^A-Za-z ]/g, "")
           )
         }
       />
@@ -1161,12 +1186,15 @@ function RegisterForm({
 
       <Input
         icon={<Phone />}
+        type="tel"
+        inputMode="numeric"
         placeholder="Phone Number"
         value={form.phone}
+        maxLength={10}
         onChange={(e) =>
           update(
             "phone",
-            e.target.value
+            e.target.value.replace(/\D/g, "").slice(0, 10)
           )
         }
       />
@@ -1176,6 +1204,7 @@ function RegisterForm({
       <Input
         icon={<Home />}
         placeholder="Address"
+        maxLength={200}
         value={form.address}
         onChange={(e) =>
           update(
@@ -1184,38 +1213,6 @@ function RegisterForm({
           )
         }
       />
-
-      {/* ROLE */}
-
-      <select
-        style={select}
-        value={form.role}
-        onChange={(e) =>
-          update(
-            "role",
-            e.target.value
-          )
-        }
-      >
-        <option
-          value=""
-          style={optionStyle}
-        >
-          Select Role
-        </option>
-
-        {ROLES.map(
-          (role) => (
-            <option
-              key={role}
-              value={role}
-              style={optionStyle}
-            >
-              {role}
-            </option>
-          )
-        )}
-      </select>
 
       {/* PASSWORD */}
 
