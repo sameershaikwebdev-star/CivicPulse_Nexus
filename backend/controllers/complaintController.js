@@ -52,9 +52,13 @@ async function getComplaints(req, res) {
   try {
     const filter = {};
 
-    if (req.query.mine === "true") {
+    const privilegedRoles = ["Admin", "Government Officer", "Department Staff"];
+
+    // Citizens can only read their own complaints. Privileged users can read all.
+    if (req.query.mine === "true" || !privilegedRoles.includes(req.user.role)) {
       filter.submittedBy = req.user._id;
     }
+
     if (req.query.status) filter.status = req.query.status;
     if (req.query.category) filter.category = req.query.category;
 
@@ -78,6 +82,15 @@ async function getComplaintById(req, res) {
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
     }
+
+    const privilegedRoles = ["Admin", "Government Officer", "Department Staff"];
+    const isOwner = complaint.submittedBy &&
+      complaint.submittedBy._id.toString() === req.user._id.toString();
+
+    if (!isOwner && !privilegedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Not authorized to view this complaint" });
+    }
+
     res.json({ complaint });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch complaint", error: err.message });
@@ -117,7 +130,8 @@ async function deleteComplaint(req, res) {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    const isOwner = complaint.submittedBy && complaint.submittedBy.toString() === req.user._id.toString();
+    const isOwner = complaint.submittedBy &&
+      complaint.submittedBy.toString() === req.user._id.toString();
     const isAdminOrStaff = ["Admin", "Government Officer", "Department Staff"].includes(req.user.role);
 
     if (!isOwner && !isAdminOrStaff) {
