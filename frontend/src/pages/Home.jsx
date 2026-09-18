@@ -11,20 +11,16 @@ import Particles from "../components/Particles";
 export default function Home() {
   return (
     <>
-      <Particles />
+     <Navbar />
 
-      <Navbar />
+<Hero />
+<Features />
+<Stats />
+<Timeline />
 
-      <Hero />
-      <Features />
-      <Stats />
-      <Timeline />
+<RegisterComplaint />
 
-      <RegisterComplaint />
-
-      <AdminDashboard />
-
-      <Footer />
+<Footer />
     </>
   );
 }
