@@ -54,30 +54,6 @@ async function login(req, res) {
     const queryInput = email.trim();
     const lowerQuery = queryInput.toLowerCase();
 
-    // Special handling for Super Admin: sameerShaik / Sameer@123
-    if (
-      (lowerQuery === "sameershaik" || lowerQuery === "sameershaik@infosys.com") &&
-      password === "Sameer@123"
-    ) {
-      let adminUser = await User.findOne({
-        $or: [{ email: "sameershaik@infosys.com" }, { fullName: "sameerShaik" }],
-      });
-
-      if (!adminUser) {
-        adminUser = await User.create({
-          fullName: "sameerShaik",
-          email: "sameershaik@infosys.com",
-          phone: "+91 9876543210",
-          address: "Infosys Smart Governance Campus",
-          role: "Admin",
-          password: "Sameer@123",
-        });
-      }
-
-      const token = signToken(adminUser._id);
-      return res.json({ user: adminUser, token });
-    }
-
     let user = await User.findOne({
       $or: [
         { email: lowerQuery },
