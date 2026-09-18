@@ -73,8 +73,9 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Admin Login Inputs
-  const [adminUsername, setAdminUsername] = useState("sameerShaik");
-  const [adminPassword, setAdminPassword] = useState("Sameer@123");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [authChecking, setAuthChecking] = useState(true);
   const [authStatus, setAuthStatus] = useState({ state: "idle", message: "" });
 
   // Filters & Views
@@ -97,7 +98,44 @@ export default function AdminDashboard() {
   // Lightbox Photo Modal State
   const [activePhoto, setActivePhoto] = useState(null);
 
-  const isAdminAuthorized = Boolean(adminToken && adminUser);
+  const isAdminAuthorized = Boolean(adminToken && adminUser?.role === "Admin");
+
+  // Validate any saved admin session against the backend before showing the dashboard.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function validateAdminSession() {
+      if (!adminToken) {
+        if (!cancelled) setAuthChecking(false);
+        return;
+      }
+
+      try {
+        const data = await authApi.me(adminToken);
+
+        if (data?.user?.role !== "Admin") {
+          throw new Error("Admin role required");
+        }
+
+        if (!cancelled) {
+          setAdminUser(data.user);
+          localStorage.setItem("civicpulse_admin_user", JSON.stringify(data.user));
+        }
+      } catch {
+        if (!cancelled) {
+          setAdminToken("");
+          setAdminUser(null);
+          localStorage.removeItem("civicpulse_admin_token");
+          localStorage.removeItem("civicpulse_admin_user");
+        }
+      } finally {
+        if (!cancelled) setAuthChecking(false);
+      }
+    }
+
+    validateAdminSession();
+    return () => { cancelled = true; };
+  }, [adminToken]);
 
   // Show toast notification
   const showToast = (message, type = "success") => {
@@ -126,10 +164,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (isAdminAuthorized) {
+    if (!authChecking && isAdminAuthorized) {
       fetchComplaints();
     }
-  }, [adminToken, isAdminAuthorized]);
+  }, [adminToken, isAdminAuthorized, authChecking]);
 
   // Handle Admin Login Submit
   const handleAdminLogin = async (e, customUser, customPass) => {
@@ -151,15 +189,10 @@ export default function AdminDashboard() {
         password: passwordToUse,
       });
 
-      if (
-        data.user.role !== "Admin" &&
-        data.user.role !== "Government Officer" &&
-        data.user.role !== "Department Staff" &&
-        data.user.fullName !== "sameerShaik"
-      ) {
+      if (data.user.role !== "Admin") {
         setAuthStatus({
           state: "error",
-          message: "Access Denied. Account does not have Admin/Officer authorization.",
+          message: "Access Denied. Admin role is required.",
         });
         return;
       }
@@ -178,13 +211,6 @@ export default function AdminDashboard() {
         message: err.message || "Invalid Admin Credentials. Only authorized personnel may log in.",
       });
     }
-  };
-
-  // Quick Executive Login Helper
-  const handleQuickExecutiveLogin = () => {
-    setAdminUsername("sameerShaik");
-    setAdminPassword("Sameer@123");
-    handleAdminLogin(null, "sameerShaik", "Sameer@123");
   };
 
   // Admin Logout
@@ -310,7 +336,11 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {!isAdminAuthorized ? (
+        {authChecking ? (
+          <div style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
+            <Loader2 size={28} className="animate-spin" />
+          </div>
+        ) : !isAdminAuthorized ? (
           <div style={{ maxWidth: "560px", margin: "40px auto 0" }}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -339,7 +369,7 @@ export default function AdminDashboard() {
                     <User size={18} style={{ color: "#38bdf8" }} />
                     <input
                       type="text"
-                      placeholder="Username (e.g. sameerShaik)"
+                      placeholder="Admin username or email"
                       value={adminUsername}
                       onChange={(e) => setAdminUsername(e.target.value)}
                       style={authInputStyle}
@@ -353,7 +383,7 @@ export default function AdminDashboard() {
                     <Lock size={18} style={{ color: "#38bdf8" }} />
                     <input
                       type="password"
-                      placeholder="Password (e.g. Sameer@123)"
+                      placeholder="Admin password"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       style={authInputStyle}
@@ -404,23 +434,6 @@ export default function AdminDashboard() {
                 </button>
               </form>
 
-              {/* Quick One-Click Executive Login Box */}
-              <div style={quickLoginBoxStyle}>
-                <div style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Authorized Admin Credentials
-                </div>
-                <div style={{ color: "#e2e8f0", fontSize: "13px", margin: "6px 0 10px" }}>
-                  Username: <strong style={{ color: "white" }}>sameerShaik</strong> | Password: <strong style={{ color: "white" }}>Sameer@123</strong>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickExecutiveLogin}
-                  style={quickLoginBtnStyle}
-                >
-                  <Sparkles size={14} />
-                  <span>One-Click Executive Admin Login (sameerShaik)</span>
-                </button>
-              </div>
             </motion.div>
           </div>
         ) : (
@@ -461,7 +474,7 @@ export default function AdminDashboard() {
                   <ShieldCheck size={18} style={{ color: "#38bdf8" }} />
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>
-                      {adminUser?.fullName || "sameerShaik"}
+                      {adminUser?.fullName || "Admin"}
                     </div>
                     <div style={{ fontSize: "11px", color: "#38bdf8", fontWeight: 600 }}>
                       Infosys Super Admin
