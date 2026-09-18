@@ -8,7 +8,6 @@ const links = [
   { name: "Statistics", href: "#statistics" },
   { name: "Timeline", href: "#timeline" },
   { name: "Login", href: "#login" },
-  { name: "Admin Page", href: "#admin" },
   { name: "Contact", href: "#contact" },
 ];
 
